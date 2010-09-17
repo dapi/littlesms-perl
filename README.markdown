@@ -1,13 +1,13 @@
 
 Пример использования:
 
- `use LittleSMS;
+  use LittleSMS;
   
   my $l = LittleSMS->new( ЛОГИН, КЛЮЧ, 1);
   
   $l->getBalance();
   
-  $l->sendSMS( НОМЕР, СООБЩЕНИЕ );
+	$l->sendSMS( НОМЕР, СООБЩЕНИЕ );
 
 
 
