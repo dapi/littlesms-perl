@@ -1,12 +1,10 @@
 
 Пример использования:
 
-  use LittleSMS;
-  
-  my $l = LittleSMS->new( ЛОГИН, КЛЮЧ, 1);
-  
-  $l->getBalance();
-  
+	use LittleSMS;
+
+	my $l = LittleSMS->new( ЛОГИН, КЛЮЧ, 1);
+	$l->getBalance();
 	$l->sendSMS( НОМЕР, СООБЩЕНИЕ );
 
 
