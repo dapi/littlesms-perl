@@ -6,10 +6,11 @@ use LittleSMS;
 # > example.pl LOGIN KEY
 #
 
-my $lsms = LittleSMS->new(@ARGV);  # login, key, test, useSSL, api_url
+my $l = LittleSMS->new(@ARGV);  # login, key, test, useSSL, api_url
 
-$lsms->getBalance();
-$lsms->sendSMS('7907777777','testmessage');
+print "Мой баланс:" , $l->getBalance(), "\n";
+
+# print $l->sendSMS('77777777','testmessage');
 
 
 
