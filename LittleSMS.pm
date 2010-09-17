@@ -1,18 +1,72 @@
-=begin
+=head1 NAME
 
-Класс для работы с сервисом LittleSMS.ru
+LittleSMS - Perl модуль для работы с сервисом LittleSMS.ru
+
+=head1 SYNOPSIS
+
+  use LittleSMS;
+
+  my $l = LittleSMS->new(@ARGV);  # login, key, useSSL, test, api_url
+
+  print "Мой баланс: ", $l->getBalance(), "\n";
+
+  print $l->sendSMS('79033781228','test message') ? "Успешно отправлено!\n" : "Ошибка!\n";
+
+  print "На счету осталось: $l->{response}->{balance}\n";
+  
+
+=head1 DESCRIPTION
 
 Функции:
  - отправка SMS
  - запрос баланса
+
+=head2 Methods
+
+=over 4
+
+=item * LittleSMS->new(login, key, useSSL, test, api_url)
+
+Все параметры, кроме login и key, указывать не обязательно. А api_url
+даже не нужно.
+
+=item * $l->getBalance()
+
+Возвращает баланс.
+
+=item * $object->sendSMS(телефон, сообщение)
+
+Отправляет сообщение и возвращает true в случае удачи.
+
+=item * $object->makeRequest(function, parameters)
+
+- function - Строка с именем функции (balance или send)
+- parameters - hashref на параметры запроса. См: https://littlesms.ru/doc
+
+=back
+
+=head1 AUTHOR
 
 @author Данил Письменный <danil@orionet.ru>
 
 Взял пример с PHP класса http://github.com/pycmam/littlesms/blob/master/LittleSMS.class.php
 от Рустама Миниахметова <pycmam@gmail.com>
 
+=head1 COPYRIGHT
+
+Модуль представляется "как есть", без гарантий.
+
+Copyright 2010.  All rights reserved.
+
+This library is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself.
+
+=head1 SEE ALSO
+
+https://littlesms.ru/doc
 
 =cut
+
 
 package LittleSMS;
 use strict;
@@ -33,40 +87,8 @@ use vars qw(
 @SORTED_PARAMS = qw(user recipients message test sign);
 
 
-# use vars qw(
-#              @ISA
-#              @EXPORT
-#           );
-
-# @ISA = qw(Exporter);
-
-# ( $VERSION ) = '$Revision: 1.8 $ ' =~ /\$Revision:\s+([^\s]+)/;
-
-# @EXPORT = qw(config
-#              setConfig);
-
-
-
-  # protected
-  # $user = null,
-  # $key = null,
-  # $testMode = 0,
-  # $url = 'littlesms.ru/api/',
-  # $useSSL = true;
-
-
-=begin
-
-Конструктор
-
-@param string $user
-@param string $key
-@param integer $testMode
-
-=cut
-  
 sub new {
-  my ($class, $user, $key, $test, $useSSL, $url) = @_;
+  my ($class, $user, $key, $useSSL, $test, $url) = @_;
   my $self =  bless {
                      user => $user,
                      key => $key,
@@ -79,15 +101,6 @@ sub new {
 }
 
 
-=begin
-
-Отправить SMS
-
-@param string|array $recipients
-@param string $message
-@return boolean
-
-=cut
 
 sub sendSMS {
   my ($self, $recipients, $message) = @_;
@@ -101,34 +114,15 @@ sub sendSMS {
                  }
                );
   
-  return $response->{status} eq 'success';
-  
+  return $response->{status} eq 'success';  
 }
 
-
-=begin
-
-Запросить баланс
-@return boolean|float
-
-=cut
 
 sub  getBalance {
   my ( $self ) = @_;
   my $response = $self->makeRequest('balance');
   return $response->{status} eq 'success' ? $response->{balance} : undef;
 }
-
-
-=begin
-
-Отправить запрос
-
-@param string $function
-@param array $params
-@return stdClass
-
-=cut
 
 
 sub makeRequest {
@@ -161,7 +155,7 @@ sub makeRequest {
   if ( $curl->perform == 0 ) {
     $content=~s/(\n|.)+\n//i; # Удаляем заголовок
     #return $curl->{status};
-    return decode_json( $content );
+    return $self->{response} = decode_json( $content );
   } else {
     croak("An error happened: Host $url");
   }
