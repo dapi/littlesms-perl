@@ -1,15 +1,15 @@
 
 Пример использования:
-====================
+———————————————————–
 
 
- use LittleSMS;
+  use LittleSMS;
 
- my $l = LittleSMS->new('login', 'key', 1);
+  my $l = LittleSMS->new('login', 'key', 1);
 
- $l->getBalance();
+  $l->getBalance();
 
- $l->sendSMS( НОМЕР, СООБЩЕНИЕ );
+  $l->sendSMS( НОМЕР, СООБЩЕНИЕ );
 
 
 
