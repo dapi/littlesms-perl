@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+=encoding utf-8
 
 =head1 NAME
 
@@ -34,33 +35,84 @@ Singleton:
  - отправка SMS
  - запрос баланса
 
-=head2 Methods
+=head2 Methods:
 
-=over 4
+=over 6
 
-=item * LittleSMS->new(login, key, useSSL, test, api_url)
+=item LittleSMS->new(login, key, useSSL, test, api_url)
 
 Все параметры, кроме login и key, указывать не обязательно. А api_url
 даже не нужно.
 
-=item * $l->getBalance()
+=item sms()
+
+Singleton вызов обьекта. Возможно после только после его
+инициализации. Например:
+
+  new LittleSMS(@ARGV);  # login, key, useSSL, test, api_url
+
+  sms()->getBalance();
+
+
+=item $object->getBalance()
 
 Возвращает баланс.
 
-=item * $object->sendSMS(телефон, сообщение)
+=item $object->sendSMS(телефон, сообщение)
 
-Отправляет сообщение и возвращает true в случае удачи.
+Отправляет сообщение и возвращает true в случае удачи. Можно указывать
+массив телефонов для массовой рассылки:
 
-=item * $object->makeRequest(function, parameters)
+   $object->sendSMS([ номер1, номер2, номер3 ], сообщение)
+
+
+=item $object->makeRequest(function, parameters)
 
 - function - Строка с именем функции (balance или send)
 - parameters - hashref на параметры запроса. См: https://littlesms.ru/doc
+
+
+=item $object->setBalanceControl( сумма, [телефон], [сообщение] )
+
+Устанавливает значение баланса при котором на указаннй телефон
+отправляется сообщение. Баланс проверяется автоматически каждый раз
+после вызова sendSMS.
+
+ВНИМАНИЕ! Сообщеие отправляется только при достижении указанного
+баланса, ни больше, ни меньше. Поэтому будьте осторожны с плавающей
+запятой и с параллельной отправкой SMS с разных источников под
+одним аккаунтом.
+
+
+  # Установить контроль с сообщенем по-умолчанию
+
+  sms()->setBalanceControl( 100, '77777777777');
+
+
+  # Определить свое сообщение
+
+  sms()->setBalanceControl( 100, '77777777777', 'Кранты, пора платать в LittleSMS');
+
+
+  # Отменить контроль.
+
+  sms()->setBalanceControl( 0 );
+
+=item $object->response([key])
+
+Возвращает поседний ответ вызова makeRequest(), то есть и после
+getBalance и после sendSMS. В случае вызова без ключа возвращает весь HASH
+ответа, в случае вызова с ключем возвращает значение ключа.
+
+  sms()->sendSMS('НОМЕР','test message') ? "Успешно отправлено!\n" : "Ошибка!\n";
+  print "На счету осталось:", sms()->response('balance');
+
 
 =back
 
 =head1 AUTHOR
 
-@author Данил Письменный <danil@orionet.ru>
+Данил Письменный <danil@orionet.ru> http://dapi.ru/
 
 Взял пример с PHP класса http://github.com/pycmam/littlesms/blob/master/LittleSMS.class.php
 от Рустама Миниахметова <pycmam@gmail.com>
@@ -77,6 +129,9 @@ modify it under the same terms as Perl itself.
 =head1 SEE ALSO
 
 https://littlesms.ru/doc
+
+Github repo for this module: http://github.com/dapi/littlesms-perl
+
 
 =cut
 
@@ -98,7 +153,11 @@ use vars qw(
              @EXPORT
              @SORTED_PARAMS
              $INSTANCE
+             $VERSION
           );
+
+$VERSION = '0.2';
+
 
 @EXPORT = qw(sms);
 
@@ -125,22 +184,42 @@ sub sms {
 sub sendSMS {
   # my $self = UNIVERSAL::isa($_[0], 'LittleSMS') ? shift : SMS();
 
-  my ($self, $recipients, $message) = @_;
+  my ($self, $recipients, $message, $dont_check ) = @_;
   
   my $response = $self->
     makeRequest( 'send',
                  {
-                  recipients => $recipients,
+                  recipients => ref($recipients)=~/ARRAY/ ? join(',',@$recipients) : $recipients,
                   message => $message,
                   test => $self->{test},
+                  balance_control => {}
                  }
                );
+
+  $self->checkBalance($response) unless $dont_check;
+
   
   return $response->{status} eq 'success';  
 }
 
+sub setBalanceControl {
+  my ( $self, $balance, $number, $message ) = @_;
+  my $bc = $self->{balance_control};
+  if ($balance>0) {
+    $bc->{balance} = $balance;
+    $bc->{number} = $number if $number;
+    $bc->{message} = $message || $bc->{message} || "Баланс на LittleSMS опустился до $balance руб.";
+    die "Не указан номер для контроля баланса" unless $bc->{number};    
+  } else {
+    $bc->{balance} = 0; # Отключить контроль баланса;
+    
+  }
+  $self->{balance_control}=$bc;
+  
+}
 
-sub  getBalance {
+
+sub getBalance {
   my ( $self ) = @_;
   my $response = $self->makeRequest('balance');
   return $response->{status} eq 'success' ? $response->{balance} : undef;
@@ -176,12 +255,34 @@ sub makeRequest {
   
   if ( $curl->perform == 0 ) {
     $content=~s/(\n|.)+\n//i; # Удаляем заголовок
-    #return $curl->{status};
     return $self->{response} = decode_json( $content );
   } else {
     croak("An error happened: Host $url");
   }
 }
+
+sub response {
+  my ($self, $key) = @_;
+  $key ? $self->{response}->{$key} : $self->{response};
+}
+
+
+
+#
+# Private methods:
+#
+
+sub checkBalance {
+  my ( $self, $response ) = @_;
+  $self->{bc}->{status}=0;
+  return undef unless $response and $self->{bc}->{balance};
+  if ($response->{balance}==$self->{bc}->{balance}) {
+    $self->sendSMS( $self->{bc}->{number}, $self->{bc}->{message}, 1 );
+    $self->{bc}->{status}=1;
+  }
+}
+
+
 
 sub generateSign {
   my ( $self, $h ) = @_;

@@ -9,4 +9,10 @@
 	$l->sendSMS( НОМЕР, СООБЩЕНИЕ );
 
 
-* Для PHP смотри: http://github.com/pycmam/littlesms
+Более подробная документация:
+
+        > perldoc LittleSMS
+
+Дополнительно:
+
+* [PHP-модуль](http://github.com/pycmam/littlesms)
