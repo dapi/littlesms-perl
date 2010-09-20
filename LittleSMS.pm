@@ -239,7 +239,8 @@ sub sendSMS {
 
   $self->checkBalance($response) unless $dont_check;
   
-
+  print STDERR "SendSMS status: $response->{status}, balance $response->{balance}\n" if $DEBUG;
+  
   return $response->{status} eq 'success';  
 }
 

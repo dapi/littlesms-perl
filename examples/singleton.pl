@@ -1,6 +1,9 @@
 #!/usr/bin/perl
 
 use LittleSMS;
+$LittleSMS::DEBUG=1;
+
+
 use Data::Dumper;
 
 # Запускать так:
@@ -10,11 +13,8 @@ use Data::Dumper;
 
 my $telefon = НОМЕР;
 
-$LittleSMS::DEBUG=1;
-
 
 new LittleSMS(@ARGV);                     # login, key, useSSL, test, api_url
-exit;
 
 print "Мой баланс: ", sms()->getBalance(), "\n";
 
@@ -23,7 +23,7 @@ print "Мой баланс: ", sms()->getBalance(), "\n";
 sms()->setSender('smstest'); # Максимум 11 символов
 
 
-sms()->sendSMS($telefon, 'Тестовое сообщение #1', 'z@1-,.[]()');    # Если на этом вызове сервис
+sms()->sendSMS($telefon, 'Тестовое сообщение #2');    # Если на этом вызове сервис
                                           # вернул указанный в контроле
                                           # баланс, то автоматически на
                                           # телефон админа отправится
