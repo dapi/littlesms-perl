@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+
+
 =head1 NAME
 
 LittleSMS - Perl модуль для работы с сервисом LittleSMS.ru
@@ -79,10 +82,16 @@ use Digest::MD5 qw(md5_hex);
 use Digest::SHA1 qw(sha1_hex);
 use JSON::XS;
 use PHP::HTTPBuildQuery qw(http_build_query);
+use Exporter;
+use base qw(Exporter);
 
 use vars qw(
+             @EXPORT
              @SORTED_PARAMS
+             $INSTANCE
           );
+
+@EXPORT = qw(sms);
 
 @SORTED_PARAMS = qw(user recipients message test sign);
 
@@ -97,12 +106,16 @@ sub new {
                      url => $url || 'littlesms.ru/api/'
                     }, $class;
   # print STDERR "$user/$key/$useSSL/$test/$url\n";
-  return $self;
+  return $INSTANCE=$self;
 }
 
-
+sub sms {
+  $INSTANCE
+}
 
 sub sendSMS {
+  # my $self = UNIVERSAL::isa($_[0], 'LittleSMS') ? shift : SMS();
+
   my ($self, $recipients, $message) = @_;
   
   my $response = $self->
