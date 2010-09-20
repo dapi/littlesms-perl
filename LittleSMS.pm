@@ -229,9 +229,11 @@ sub sendSMS {
   $h->{sender} = substr( $h->{sender}, 0, 11 );
   
   delete $h->{sender} unless $h->{sender}; # Удаляем если оказался
-                                           # пустой
-  print STDERR Data::Dumper->Dump($h) if $DEBUG;
-  
+  # пустой
+
+  print STDERR "SendSMS to: $h->{recipients}, $message\n" if $DEBUG;
+
+  #print STDERR Data::Dumper->Dump($h) if $DEBUG;  
 
   my $response = $self->makeRequest( 'send', $h );
 

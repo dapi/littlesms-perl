@@ -8,7 +8,8 @@ use Data::Dumper;
 # > singleton.pl LOGIN KEY
 #
 
-my $telefon = 1;
+my $telefon = НОМЕР;
+
 $LittleSMS::DEBUG=1;
 
 
