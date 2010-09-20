@@ -197,7 +197,8 @@ sub new {
                      test => $test || 0,
                      url => $url || 'littlesms.ru/api/'
                     }, $class;
-  print STDERR "$user/$key/$useSSL/$test/$url\n" if $DEBUG;
+  
+  print STDERR "LittleSMS new: $user $key $useSSL $test $url\n" if $DEBUG;
   
   return $INSTANCE=$self;
 }

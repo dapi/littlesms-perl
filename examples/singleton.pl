@@ -8,10 +8,12 @@ use Data::Dumper;
 # > singleton.pl LOGIN KEY
 #
 
-my $telefon = НОМЕР;
+my $telefon = 1;
+$LittleSMS::DEBUG=1;
 
 
 new LittleSMS(@ARGV);                     # login, key, useSSL, test, api_url
+exit;
 
 print "Мой баланс: ", sms()->getBalance(), "\n";
 
