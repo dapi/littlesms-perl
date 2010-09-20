@@ -16,7 +16,17 @@ LittleSMS - Perl модуль для работы с сервисом LittleSMS.
   print $l->sendSMS('79033781228','test message') ? "Успешно отправлено!\n" : "Ошибка!\n";
 
   print "На счету осталось: $l->{response}->{balance}\n";
-  
+
+
+
+После инициализации обьекта LittleSMS можно использовать как
+Singleton: 
+
+  new LittleSMS(@ARGV);  # login, key, useSSL, test, api_url
+
+  sms()->getBalance(); 
+  sms()->sendSMS(...);
+
 
 =head1 DESCRIPTION
 
@@ -76,12 +86,11 @@ use strict;
 use warnings;
 
 use WWW::Curl::Easy;
-use LWP::Curl;
 use URI::Escape;
 use Digest::MD5 qw(md5_hex);
 use Digest::SHA1 qw(sha1_hex);
 use JSON::XS;
-use PHP::HTTPBuildQuery qw(http_build_query);
+
 use Exporter;
 use base qw(Exporter);
 
