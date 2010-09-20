@@ -8,27 +8,42 @@ use Data::Dumper;
 # > singleton.pl LOGIN KEY
 #
 
-my $telefon = ТЕЛЕФОН;
+my $telefon = 79033891228;
 
 
 new LittleSMS(@ARGV);                     # login, key, useSSL, test, api_url
 
 print "Мой баланс: ", sms()->getBalance(), "\n";
 
-# print sms()->sendSMS('НОМЕР','test message') ? "Успешно отправлено!\n" : "Ошибка!\n";
-# print "На счету осталось:", sms()->response()->{balance}\n";
+#sms()->setBalanceControl( 100, $telefon); # Установить контроль
+
+sms()->setSender('smstest'); # Максимум 11 символов
 
 
-sms()->setBalanceControl( 100, $telefon); # Установить контроль
-                                          # с сообщенем по-умолчанию
-
-
-sms()->sendSMS($telefon, 'СООБЩЕНИЕ');    # Если на этом вызове сервис
+sms()->sendSMS($telefon, 'Тестовое сообщение #1', 'z@1-,.[]()');    # Если на этом вызове сервис
                                           # вернул указанный в контроле
                                           # баланс, то автоматически на
                                           # телефон админа отправится
                                           # установленное ранее сообщение.
 
+print "На счету осталось:", sms()->response('balance'), "\n";
+
 print Dumper(sms()->response());
 
-print "На счету осталось:", sms()->response('balance'), "\n";
+my $ids = sms()->response('messages_id');
+
+my $mr;
+
+# // запрос статуса сообщения
+do {
+  my $result = sms()->checkStatus($ids);
+  my $id = (keys %{$result->{messages}})[0];  
+  
+  $mr = $result->{messages}->{$id};
+
+  print "Status of message $id is: '$mr'\n";
+  
+  sleep 1;
+  
+} while ($mr ne 'sent');
+

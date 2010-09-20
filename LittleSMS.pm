@@ -58,12 +58,26 @@ Singleton вызов обьекта. Возможно после только п
 
 Возвращает баланс.
 
-=item $object->sendSMS(телефон, сообщение)
+=item $object->sendSMS(телефон, сообщение, [senderID] )
 
-Отправляет сообщение и возвращает true в случае удачи. Можно указывать
+Отправляет сообщение и возвращает true в случае удачи.
+
+   $object->sendSMS( номер1, сообщение)
+
+Можно указывать
 массив телефонов для массовой рассылки:
 
    $object->sendSMS([ номер1, номер2, номер3 ], сообщение)
+
+А можно задать SenderID - строка (11 символов, латиница, цифры, * ()
+[] @ . , - _)
+
+   $object->sendSMS( номер1, сообщение, 'zhazhda.ru');
+
+=item $object->checkStatus( messages_id );
+
+Запрос на сервер для проверки статусов сообщения. Параметр - массив
+messages_id вовзращенный через response().
 
 
 =item $object->makeRequest(function, parameters)
@@ -71,6 +85,16 @@ Singleton вызов обьекта. Возможно после только п
 - function - Строка с именем функции (balance или send)
 - parameters - hashref на параметры запроса. См: https://littlesms.ru/doc
 
+
+=item $object->setSender( senderID )
+
+Имя отправителя по-умолчанию для всех сообщений. Строка (11 символов,
+латиница, цифры, * () [] @ . , - _)
+
+   $object->setSender('homesite.ru');
+
+P.S. В случае необходимости для каждого сообщения можно устанавливаеть
+собственный SenderID.
 
 =item $object->setBalanceControl( сумма, телефон, [сообщение] )
 
@@ -101,6 +125,8 @@ getBalance и после sendSMS. В случае вызова без ключа
   sms()->sendSMS('НОМЕР','test message') ? "Успешно отправлено!\n" : "Ошибка!\n";
   print "На счету осталось:", sms()->response('balance');
 
+ВНИМАНИЕ! При установленном контроле баланса response может возвращать
+результат отправки контрольного сообщения.
 
 =back
 
@@ -134,6 +160,7 @@ package LittleSMS;
 use strict;
 use warnings;
 
+#use Data::Dumper;
 use WWW::Curl::Easy;
 use URI::Escape;
 use Digest::MD5 qw(md5_hex);
@@ -155,7 +182,7 @@ $VERSION = '0.3';
 
 @EXPORT = qw(sms);
 
-@SORTED_PARAMS = qw(user recipients message test sign);
+@SORTED_PARAMS = qw(user messages_id recipients message sender test sign);
 
 
 sub new {
@@ -175,24 +202,37 @@ sub sms {
   $INSTANCE
 }
 
+sub setSender {
+  my ( $self, $sender) = @_;
+  $self->{sender} = $sender;
+}
+
 sub sendSMS {
   # my $self = UNIVERSAL::isa($_[0], 'LittleSMS') ? shift : SMS();
 
-  my ($self, $recipients, $message, $dont_check ) = @_;
-  
-  my $response = $self->
-    makeRequest( 'send',
-                 {
-                  recipients => ref($recipients)=~/ARRAY/ ? join(',',@$recipients) : $recipients,
-                  message => $message,
-                  test => $self->{test},
-                  balance_control => {}
-                 }
-               );
+  my ($self, $recipients, $message, $sender ) = @_;
 
-  $self->checkBalance($response) unless $dont_check;
-
+  my $h = {
+           recipients => ref($recipients)=~/ARRAY/ ? join(',',@$recipients) : $recipients,
+           message => $message,
+           test => $self->{test}
+          };
   
+
+  $h->{sender} = $sender || $self->{sender};
+
+  # 11 символов, латиница, цифры, * ()  [] @ . , - _)
+  $h->{sender} =~ s/[^a-z0-9\(\)\[\]@.,\-_]+//ig;
+  $h->{sender} = substr( $h->{sender}, 0, 11 );
+  
+  delete $h->{sender} unless $h->{sender}; # Удаляем если оказался
+                                           # пустой
+  # print STDERR Dumper($h);
+
+  my $response = $self->makeRequest( 'send', $h );
+
+  $self->checkBalance($response);
+
   return $response->{status} eq 'success';  
 }
 
@@ -261,6 +301,14 @@ sub response {
 }
 
 
+sub checkStatus {
+  my ($self, $messages_id) = @_;
+  
+  my $ids = ref($messages_id)=~/ARRAY/ ? join(',',@$messages_id) : $messages_id;
+  
+  $self->makeRequest('status',{messages_id=>$ids});
+}
+
 
 #
 # Private methods:
@@ -268,13 +316,12 @@ sub response {
 
 sub checkBalance {
   my ( $self, $response ) = @_;
-  $self->balance_control()->{status} = 0;
-  return undef unless $response && $self->balance_control('balance');
+  return undef unless $response && $self->balance_control('balance') && !$self->balance_control()->{status};
 
   if ($response->{balance}==$self->balance_control('balance')) {
-    $self->sendSMS( $self->balance_control('number'), $self->balance_control('message'), 1 );
-    $self->balance_control()->{sent} += 1;
     $self->balance_control()->{status} = 1;
+    $self->sendSMS( $self->balance_control('number'), $self->balance_control('message') );
+    $self->balance_control()->{sent} += 1;
   }
   
 }

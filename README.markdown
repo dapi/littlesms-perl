@@ -18,10 +18,10 @@
         
 
 * [Примеры](examples/)
-* (http://littlesms.ru/doc/)
+* [http://littlesms.ru/doc/]
 * [PHP-модуль](http://github.com/pycmam/littlesms)
 
 
 Автор:
 
-Данил Письменный (http://dapi.ru)
+[Данил Письменный](http://dapi.ru)
