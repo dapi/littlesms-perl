@@ -11,7 +11,7 @@
 
 Более подробная документация:
 
-        > perldoc LittleSMS
+	> perldoc LittleSMS
 
 Дополнительно:
 

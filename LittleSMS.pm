@@ -156,7 +156,7 @@ use vars qw(
              $VERSION
           );
 
-$VERSION = '0.2';
+$VERSION = '0.3';
 
 
 @EXPORT = qw(sms);
@@ -274,15 +274,21 @@ sub response {
 
 sub checkBalance {
   my ( $self, $response ) = @_;
-  $self->{bc}->{status}=0;
-  return undef unless $response and $self->{bc}->{balance};
-  if ($response->{balance}==$self->{bc}->{balance}) {
-    $self->sendSMS( $self->{bc}->{number}, $self->{bc}->{message}, 1 );
-    $self->{bc}->{status}=1;
+  $self->balance_control()->{status} = 0;
+  return undef unless $response && $self->balance_control('balance');
+
+  if ($response->{balance}==$self->balance_control('balance')) {
+    $self->sendSMS( $self->balance_control('number'), $self->balance_control('message'), 1 );
+    $self->balance_control()->{sent} += 1;
+    $self->balance_control()->{status} = 1;
   }
+  
 }
 
-
+sub balance_control {
+  my ($self, $key ) = @_;
+  $key ? $self->{balance_control}->{$key} : $self->{balance_control};
+}
 
 sub generateSign {
   my ( $self, $h ) = @_;
