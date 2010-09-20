@@ -175,9 +175,12 @@ use vars qw(
              @SORTED_PARAMS
              $INSTANCE
              $VERSION
+             $DEBUG
           );
 
 $VERSION = '0.3';
+
+$DEBUG = 0;
 
 
 @EXPORT = qw(sms);
@@ -194,7 +197,8 @@ sub new {
                      test => $test || 0,
                      url => $url || 'littlesms.ru/api/'
                     }, $class;
-  # print STDERR "$user/$key/$useSSL/$test/$url\n";
+  print STDERR "$user/$key/$useSSL/$test/$url\n" if $DEBUG;
+  
   return $INSTANCE=$self;
 }
 
@@ -208,8 +212,6 @@ sub setSender {
 }
 
 sub sendSMS {
-  # my $self = UNIVERSAL::isa($_[0], 'LittleSMS') ? shift : SMS();
-
   my ($self, $recipients, $message, $sender, $dont_check ) = @_;
 
   my $h = {
@@ -227,7 +229,8 @@ sub sendSMS {
   
   delete $h->{sender} unless $h->{sender}; # Удаляем если оказался
                                            # пустой
-  # print STDERR Dumper($h);
+  print STDERR Data::Dumper->Dump($h) if $DEBUG;
+  
 
   my $response = $self->makeRequest( 'send', $h );
 
