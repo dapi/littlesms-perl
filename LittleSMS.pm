@@ -210,7 +210,7 @@ sub setSender {
 sub sendSMS {
   # my $self = UNIVERSAL::isa($_[0], 'LittleSMS') ? shift : SMS();
 
-  my ($self, $recipients, $message, $sender ) = @_;
+  my ($self, $recipients, $message, $sender, $dont_check ) = @_;
 
   my $h = {
            recipients => ref($recipients)=~/ARRAY/ ? join(',',@$recipients) : $recipients,
@@ -231,7 +231,8 @@ sub sendSMS {
 
   my $response = $self->makeRequest( 'send', $h );
 
-  $self->checkBalance($response);
+  $self->checkBalance($response) unless $dont_check;
+  
 
   return $response->{status} eq 'success';  
 }
@@ -320,7 +321,7 @@ sub checkBalance {
 
   if ($response->{balance}==$self->balance_control('balance')) {
     $self->balance_control()->{status} = 1;
-    $self->sendSMS( $self->balance_control('number'), $self->balance_control('message') );
+    $self->sendSMS( $self->balance_control('number'), $self->balance_control('message'), '', 1 );
     $self->balance_control()->{sent} += 1;
   }
   

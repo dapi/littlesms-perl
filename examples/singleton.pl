@@ -8,7 +8,7 @@ use Data::Dumper;
 # > singleton.pl LOGIN KEY
 #
 
-my $telefon = 79033891228;
+my $telefon = НОМЕР;
 
 
 new LittleSMS(@ARGV);                     # login, key, useSSL, test, api_url
